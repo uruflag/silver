@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<!--------Gemini で作成-------------------->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>配布入力画面（5名対応版）</title>
+  <style>
+    :root {
+      --border: #111;
+      --pink: #efb6ea;
+      --gray: #d9d9d9;
+      --gray-o:#f3f3f3;
+      --red: #ff2b2b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      background: #ffffff;
+      font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color: #111;
+    }
+
+    .wrap { margin: 0 auto; max-width: 900px; }
+
+    .sheet {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 3px solid var(--border);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .sheet td, .sheet th {
+      border: 1px solid var(--border);
+      padding: 4px 6px;
+      text-align: center;
+      vertical-align: middle;
+      height: 30px;
+    }
+
+    .pink { background: var(--pink); }
+    .gray { background: var(--gray); }
+    .gray-o { background: var(--gray-o); }
+    .red { color: var(--red); }
+    .bold { font-weight: 700; }
+    .big { font-size: 20px; }
+    .midle { font-size: 18px;  line-height: 1.2; }
+
+    input, select {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      text-align: center;
+      font: inherit;
+      color: inherit;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    
+    .btn-area { text-align: center; margin: 20px 0; }
+    .calc-btn {
+      padding: 10px 40px;
+      font-size: 18px;
+      font-weight: 700;
+      background: #444;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .calc-btn:hover { background: #000; }
+    
+    .section-top { border-top: 3px solid var(--border) !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <table class="sheet">
+      <colgroup>
+        <col style="width: 12%;">
+        <col style="width: 18%;">
+        <col style="width: 25%;">
+        <col style="width: 25%;">
+        <col style="width: 25%;">
+      </colgroup>
+
+      <tr>
+        <td class="bold gray">月 　 日</td>
+        <td colspan="4" class="pink"><input type="date" value="2026-04-27" /></td>
+      </tr>
+
+      <tr>
+        <td class="bold gray">配布場所</td>
+        <td class="pink">港南：</td>
+        <td colspan="3" class="pink">
+          <select>
+            <option selected>日限山</option>
+            <option>さつき台自治会</option>
+            <option>川上町ＡＢ</option>
+            <option>川上町ＣⅮ</option>
+            <option>舞岡台自治会</option>
+          </select>
+        </td>
+      </tr>
+
+      <tr class="bold gray">
+        <td>担 当 者</td>
+        <td>前月</td>
+        <td class="red">持出</td>
+        <td class="red">配布</td>
+        <td class="red">実残</td>
+      </tr>
+
+      <script>
+        const members = ["村上", "吉田", "深田", "西田", "畑岡"];
+        members.forEach((name, idx) => {
+          document.write(`
+            <tbody class="person-group">
+              <tr>
+                <td rowspan="4" class="big bold">${name}</td>
+                <td rowspan="3" class="gray">100</td>
+                <td class="red bold"><input type="number" class="carry-in" value="0"></td><!--持出1-->
+                <td rowspan="3"class="red bold midle"><input type="number" class="dist-in" value="0"><!--配布--></td>
+                <td class="red bold"><input type="number" class="rem-in" value="0"></td><!--実残1-->
+              </tr>
+              <tr>
+                <td class="red bold"><input type="number" class="carry-in" value="0"></td><!--持出2-->
+                <td class="red bold"><input type="number" class="rem-in" value="0"></td><!--実残2-->
+
+              </tr>
+              <tr>
+                <td class="red bold"><input type="number" class="carry-in" value="0"></td><!--持出3-->
+                <td class="red bold"><input type="number" class="rem-in" value="0"></td><!--実残3-->
+
+              </tr>
+              <tr class="gray-o">
+                <td class="bold">小計</td>
+                <td class="person-carry-total">0</td><!--持出計-->
+                <td class="person-judge">0</td><!--判定-->
+                <td class="person-rem-total">0</td><!--実残計-->
+              </tr>
+            </tbody>
+          `);
+        });
+      </script>
+
+      <tr class="section-top bold red gray">
+        <td>総 合 計</td>
+        <td id="grandPrevTotal">-</td>
+        <td id="grandCarryTotal">0</td>
+        <td id="grandDistTotal">0</td>
+        <td id="grandRemTotal">0</td>
+      </tr>
+      <tr class="bold red gray">
+        <td colspan="3">最終判定 (総合計による)</td>
+        <td colspan="2" id="finalJudgeStatus" style="font-size: 20px;">-</td>
+      </tr>
+    </table>
+
+    <div class="btn-area">
+      <button type="button" class="calc-btn" id="execCalc">計 算 実 行</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 数値上書き設定（フォーカス時に全選択）
+      document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('focus', (e) => e.target.select());
+      });
+
+      const btn = document.getElementById('execCalc');
+
+      btn.addEventListener('click', () => {
+        let gCarry = 0; // 持出総合計
+        let gDist = 0;  // 配布総合計（入力値）
+        let gRem = 0;   // 実残総合計
+
+        // 各担当者ごとに計算
+        const groups = document.querySelectorAll('.person-group');
+        groups.forEach(group => {
+          let pCarry = 0;
+          let pRem = 0;
+
+          // 持出・実残の小計
+          group.querySelectorAll('.carry-in').forEach(i => pCarry += parseInt(i.value, 10) || 0);
+          group.querySelectorAll('.rem-in').forEach(i => pRem += parseInt(i.value, 10) || 0);
+          
+          // 配布入力値の取得
+          const pDist = parseInt(group.querySelector('.dist-in').value, 10) || 0;
+          const pCalculated = pCarry - pRem;
+
+          // 個人の小計表示
+          group.querySelector('.person-carry-total').textContent = pCarry;
+          group.querySelector('.person-rem-total').textContent = pRem;
+          
+          const judgeCell = group.querySelector('.person-judge');
+          if (pCalculated === pDist) {
+            judgeCell.textContent = "◎";
+            judgeCell.style.color = "#111";
+          } else {
+            judgeCell.textContent = pCalculated;
+            judgeCell.style.color = "red";
+          }
+
+          // 総合計に加算
+          gCarry += pCarry;
+          gRem += pRem;
+          gDist += pDist;
+        });
+
+        // 総合計の表示更新
+        document.getElementById('grandCarryTotal').textContent = gCarry;
+        document.getElementById('grandRemTotal').textContent = gRem;
+        document.getElementById('grandDistTotal').textContent = gDist;
+
+        // 最終判定（総合計でのチェック）
+        const finalJudgeStatus = document.getElementById('finalJudgeStatus');
+        const totalCalculated = gCarry - gRem;
+
+        if (totalCalculated === gDist) {
+          finalJudgeStatus.textContent = "◎ 一致しました";
+          finalJudgeStatus.style.color = "#111";
+        } else {
+          finalJudgeStatus.textContent = "× 不一致 (" + totalCalculated + ")";
+          finalJudgeStatus.style.color = "red";
+        }
+        
+        alert("計算が完了しました");
+      });
+    });
+  </script>
+</body>
+</html>
