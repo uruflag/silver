@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-	<!--------Gemini で作成-------------------->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>配布入力画面（5名対応版）</title>
+  <title>配布入力画面（完全版）</title>
+
   <style>
     :root {
       --border: #111;
@@ -24,7 +24,7 @@
       color: #111;
     }
 
-    .wrap { margin: 0 auto; max-width: 900px; }
+    .wrap { margin: 0 auto; max-width: 900px; overflow-x: auto; }
 
     .sheet {
       width: 100%;
@@ -33,6 +33,7 @@
       border: 3px solid var(--border);
       font-size: 14px;
       margin-bottom: 20px;
+      min-width: 700px;
     }
 
     .sheet td, .sheet th {
@@ -48,8 +49,6 @@
     .gray-o { background: var(--gray-o); }
     .red { color: var(--red); }
     .bold { font-weight: 700; }
-    .big { font-size: 12px; }
-    .midle { font-size: 12px;  line-height: 1.2; }
 
     input, select {
       width: 100%;
@@ -61,25 +60,28 @@
       color: inherit;
     }
 
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    
     .btn-area { text-align: center; margin: 20px 0; }
     .calc-btn {
       padding: 10px 40px;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
       background: #444;
       color: #fff;
       border: none;
       cursor: pointer;
       border-radius: 4px;
+      margin: 5px;
     }
-    .calc-btn:hover { background: #000; }
-    
-    .section-top { border-top: 3px solid var(--border) !important; }
+
+    @media (max-width: 600px) {
+      body { padding: 10px; font-size: 14px; }
+      .sheet td, .sheet th { padding: 6px 4px; height: 36px; font-size: 13px; }
+      input, select { font-size: 14px; height: 32px; }
+      .calc-btn { width: 100%; padding: 14px; font-size: 16px; }
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <table class="sheet">
@@ -93,14 +95,16 @@
 
       <tr>
         <td class="gray">月日</td>
-        <td colspan="4" class="pink"><input class="bold" type="date" value="2026-04-27" /></td>
+        <td colspan="4" class="pink">
+          <input id="inputDate" class="bold" type="date" value="2026-04-27" />
+        </td>
       </tr>
 
       <tr>
         <td class="gray">場所</td>
         <td class="pink bold">港南</td>
         <td colspan="3" class="pink bold">
-          <select>
+          <select id="inputPlace">
             <option selected>日限山</option>
             <option>さつき台自治会</option>
             <option>川上町ＡＢ</option>
@@ -120,31 +124,29 @@
 
       <script>
         const members = ["村上", "吉田", "深田", "西田", "畑岡"];
-        members.forEach((name, idx) => {
+        members.forEach((name) => {
           document.write(`
-            <tbody class="person-group">
+            <tbody class="person-group" data-name="${name}">
               <tr>
                 <td rowspan="4" class="bold">${name}</td>
-                <td rowspan="3" class="gray">100</td>
-                <td class="red bold"><input type="number" class="carry-in" value="0"></td><!--持出1-->
-                <td rowspan="3"class="red bold"><input type="number" class="dist-in" value="0"><!--配布--></td>
-                <td class="red bold"><input type="number" class="rem-in" value="0"></td><!--実残1-->
+                <td rowspan="3" class="gray prev-val">100</td>
+                <td class="red bold"><input type="number" class="carry-in" value="0"></td>
+                <td rowspan="3"class="red bold"><input type="number" class="dist-in" value="0"></td>
+                <td class="red bold"><input type="number" class="rem-in" value="0"></td>
               </tr>
               <tr>
-                <td class="red bold"><input type="number" class="carry-in" value="0"></td><!--持出2-->
-                <td class="red bold"><input type="number" class="rem-in" value="0"></td><!--実残2-->
-
+                <td class="red bold"><input type="number" class="carry-in" value="0"></td>
+                <td class="red bold"><input type="number" class="rem-in" value="0"></td>
               </tr>
               <tr>
-                <td class="red bold"><input type="number" class="carry-in" value="0"></td><!--持出3-->
-                <td class="red bold"><input type="number" class="rem-in" value="0"></td><!--実残3-->
-
+                <td class="red bold"><input type="number" class="carry-in" value="0"></td>
+                <td class="red bold"><input type="number" class="rem-in" value="0"></td>
               </tr>
               <tr class="gray-o">
                 <td class="bold">小計</td>
-                <td class="person-carry-total">0</td><!--持出計-->
-                <td class="person-judge">0</td><!--判定-->
-                <td class="person-rem-total">0</td><!--実残計-->
+                <td class="person-carry-total">0</td>
+                <td class="person-judge">0</td>
+                <td class="person-rem-total">0</td>
               </tr>
             </tbody>
           `);
@@ -164,78 +166,155 @@
       </tr>
     </table>
 
+    <!-- ▼ TSV 読み込み UI -->
+    <div class="btn-area">
+      <input type="file" id="tsvFile" accept=".tsv,text/tab-separated-values" />
+      <button type="button" class="calc-btn" id="loadTSV">TSV読込</button>
+      <button type="button" class="calc-btn" id="searchData">データ検索</button>
+      <button type="button" class="calc-btn" id="saveData">保存</button>
+    </div>
+
     <div class="btn-area">
       <button type="button" class="calc-btn" id="execCalc">計 算 実 行</button>
     </div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // 数値上書き設定（フォーカス時に全選択）
-      document.querySelectorAll('input[type="number"]').forEach(input => {
-        input.addEventListener('focus', (e) => e.target.select());
-      });
+<script>
+let loadedTSV = [];
 
-      const btn = document.getElementById('execCalc');
+/* ▼ TSV 読み込み */
+document.getElementById("loadTSV").addEventListener("click", () => {
+  const fileInput = document.getElementById("tsvFile");
+  if (!fileInput.files.length) {
+    alert("TSVファイルを選択してください");
+    return;
+  }
 
-      btn.addEventListener('click', () => {
-        let gCarry = 0; // 持出総合計
-        let gDist = 0;  // 配布総合計（入力値）
-        let gRem = 0;   // 実残総合計
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = reader.result.trim().split("\n");
+    loadedTSV = lines.slice(1).map(line => line.split("\t"));
+    alert("TSVデータを読み込みました");
+  };
+  reader.readAsText(fileInput.files[0], "UTF-8");
+});
 
-        // 各担当者ごとに計算
-        const groups = document.querySelectorAll('.person-group');
-        groups.forEach(group => {
-          let pCarry = 0;
-          let pRem = 0;
+/* ▼ 月日＋場所で検索して画面に反映 */
+document.getElementById("searchData").addEventListener("click", () => {
+  if (loadedTSV.length === 0) {
+    alert("先に TSV を読み込んでください");
+    return;
+  }
 
-          // 持出・実残の小計
-          group.querySelectorAll('.carry-in').forEach(i => pCarry += parseInt(i.value, 10) || 0);
-          group.querySelectorAll('.rem-in').forEach(i => pRem += parseInt(i.value, 10) || 0);
-          
-          // 配布入力値の取得
-          const pDist = parseInt(group.querySelector('.dist-in').value, 10) || 0;
-          const pCalculated = pCarry - pRem;
+  const date = document.getElementById("inputDate").value.replace(/-/g, "");
+  const place = document.getElementById("inputPlace").value;
 
-          // 個人の小計表示
-          group.querySelector('.person-carry-total').textContent = pCarry;
-          group.querySelector('.person-rem-total').textContent = pRem;
-          
-          const judgeCell = group.querySelector('.person-judge');
-          if (pCalculated === pDist) {
-            judgeCell.textContent = "◎";
-            judgeCell.style.color = "#111";
-          } else {
-            judgeCell.textContent = pCalculated;
-            judgeCell.style.color = "red";
-          }
+  const groups = document.querySelectorAll(".person-group");
 
-          // 総合計に加算
-          gCarry += pCarry;
-          gRem += pRem;
-          gDist += pDist;
-        });
+  groups.forEach(group => {
+    const name = group.dataset.name;
+    const row = loadedTSV.find(r => r[0] == date && r[1] == "港南" && r[2] == place && r[3] == name);
 
-        // 総合計の表示更新
-        document.getElementById('grandCarryTotal').textContent = gCarry;
-        document.getElementById('grandRemTotal').textContent = gRem;
-        document.getElementById('grandDistTotal').textContent = gDist;
+    if (row) {
+      group.querySelector(".prev-val").textContent = row[4];
+      const carry = group.querySelectorAll(".carry-in");
+      carry[0].value = row[5];
+      carry[1].value = row[6];
+      carry[2].value = row[7];
 
-        // 最終判定（総合計でのチェック）
-        const finalJudgeStatus = document.getElementById('finalJudgeStatus');
-        const totalCalculated = gCarry - gRem;
+      group.querySelector(".dist-in").value = row[9];
 
-        if (totalCalculated === gDist) {
-          finalJudgeStatus.textContent = "◎ 一致しました";
-          finalJudgeStatus.style.color = "#111";
-        } else {
-          finalJudgeStatus.textContent = "× 不一致 (" + totalCalculated + ")";
-          finalJudgeStatus.style.color = "red";
-        }
-        
-        // alert("計算が完了しました");
-      });
-    });
-  </script>
+      const rem = group.querySelectorAll(".rem-in");
+      rem[0].value = row[10];
+      rem[1].value = row[11];
+      rem[2].value = row[12];
+    }
+  });
+
+  alert("一致するデータを読み込みました");
+});
+
+/* ▼ 保存（画面内容 → TSV ダウンロード） */
+document.getElementById("saveData").addEventListener("click", () => {
+  const date = document.getElementById("inputDate").value.replace(/-/g, "");
+  const place = document.getElementById("inputPlace").value;
+
+  let output = "月日\t地区\t場所\t担当\t前月\t持出1\t持出2\t持出3\t持出計\t配布\t実残1\t実残2\t実残3\t実残計\n";
+
+  document.querySelectorAll(".person-group").forEach(group => {
+    const name = group.dataset.name;
+    const prev = group.querySelector(".prev-val").textContent;
+
+    const carry = [...group.querySelectorAll(".carry-in")].map(i => i.value);
+    const rem = [...group.querySelectorAll(".rem-in")].map(i => i.value);
+    const dist = group.querySelector(".dist-in").value;
+
+    const carrySum = carry.reduce((a,b)=>a+Number(b),0);
+    const remSum = rem.reduce((a,b)=>a+Number(b),0);
+
+    output += [
+      date, "港南", place, name, prev,
+      carry[0], carry[1], carry[2], carrySum,
+      dist,
+      rem[0], rem[1], rem[2], remSum
+    ].join("\t") + "\n";
+  });
+
+  const blob = new Blob([output], { type: "text/tab-separated-values" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${date}_${place}.tsv`;
+  a.click();
+});
+
+/* ▼ 計算機能（元コード） */
+document.getElementById("execCalc").addEventListener("click", () => {
+  let gCarry = 0, gDist = 0, gRem = 0;
+
+  const groups = document.querySelectorAll('.person-group');
+  groups.forEach(group => {
+    let pCarry = 0;
+    let pRem = 0;
+
+    group.querySelectorAll('.carry-in').forEach(i => pCarry += parseInt(i.value, 10) || 0);
+    group.querySelectorAll('.rem-in').forEach(i => pRem += parseInt(i.value, 10) || 0);
+
+    const pDist = parseInt(group.querySelector('.dist-in').value, 10) || 0;
+    const pCalculated = pCarry - pRem;
+
+    group.querySelector('.person-carry-total').textContent = pCarry;
+    group.querySelector('.person-rem-total').textContent = pRem;
+
+    const judgeCell = group.querySelector('.person-judge');
+    if (pCalculated === pDist) {
+      judgeCell.textContent = "◎";
+      judgeCell.style.color = "#111";
+    } else {
+      judgeCell.textContent = pCalculated;
+      judgeCell.style.color = "red";
+    }
+
+    gCarry += pCarry;
+    gRem += pRem;
+    gDist += pDist;
+  });
+
+  document.getElementById('grandCarryTotal').textContent = gCarry;
+  document.getElementById('grandRemTotal').textContent = gRem;
+  document.getElementById('grandDistTotal').textContent = gDist;
+
+  const finalJudgeStatus = document.getElementById('finalJudgeStatus');
+  const totalCalculated = gCarry - gRem;
+
+  if (totalCalculated === gDist) {
+    finalJudgeStatus.textContent = "◎ 一致しました";
+    finalJudgeStatus.style.color = "#111";
+  } else {
+    finalJudgeStatus.textContent = "× 不一致 (" + totalCalculated + ")";
+    finalJudgeStatus.style.color = "red";
+  }
+});
+</script>
+
 </body>
 </html>
