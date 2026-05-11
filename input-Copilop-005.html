@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配布管理（5名同時表示版）by copilot</title>
+
+<style>
+body {
+  font-family: "Hiragino Sans", Meiryo, sans-serif;
+  background: #f0f0f0;
+  padding: 10px;
+}
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.person-block {
+  border: 2px solid #333;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+}
+.person-title {
+  font-size: 20px;
+  font-weight: bold;
+  background: #efb6ea;
+  padding: 5px;
+  text-align: center;
+  border-radius: 4px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+th, td {
+  border: 1px solid #333;
+  padding: 6px;
+  text-align: center;
+}
+.gray { background: #d9d9d9; font-weight: bold; }
+input, select {
+  width: 100%;
+  padding: 6px;
+  font-size: 15px;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+}
+button {
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  background: #333;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button:active { background: #000; }
+.judge {
+  font-size: 20px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<h2>配布管理（5名同時表示・編集版）</h2>
+
+<!-- 号数入力 -->
+<table>
+<tr>
+  <td class="gray">号数</td>
+  <td><input type="text" id="gouInput"></td>
+</tr>
+<tr>
+  <td class="gray">データ読込</td>
+  <td><button id="loadBtn">読込</button></td>
+</tr>
+</table>
+
+<!-- 5名分のフォームを入れる -->
+<div id="allPersons"></div>
+
+<div style="text-align:center; margin-top:20px;">
+  <button id="saveBtn" style="background:#0066cc;">JSON保存（5名まとめて）</button>
+</div>
+
+</div>
+
+<script>
+// 5名の固定メンバー
+const members = ["村上", "吉田", "深田", "西田", "畑岡"];
+
+// ------------------------------
+// 5名分のフォームを生成
+// ------------------------------
+function createPersonForms() {
+  const container = document.getElementById("allPersons");
+  container.innerHTML = "";
+
+  members.forEach(name => {
+    const html = `
+      <div class="person-block" id="block_${name}">
+        <div class="person-title">${name}</div>
+
+        <table>
+          <tr><td class="gray">号数</td><td><input id="${name}_号数"></td></tr>
+          <tr><td class="gray">地区</td><td><input id="${name}_地区"></td></tr>
+          <tr><td class="gray">月日</td><td><input type="date" id="${name}_月日"></td></tr>
+          <tr><td class="gray">場所</td><td><input id="${name}_場所"></td></tr>
+          <tr><td class="gray">担当</td><td><input id="${name}_担当" value="${name}"></td></tr>
+        </table>
+
+        <table>
+          <tr><th colspan="3" class="gray">前月</th></tr>
+          <tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
+          <tr>
+            <td><input type="time" id="${name}_前月開始時間"></td>
+            <td><input type="time" id="${name}_前月終了時間"></td>
+            <td><span id="${name}_前月稼働時間">0</span> 時間</td>
+          </tr>
+        </table>
+
+        <table>
+          <tr><th colspan="3" class="gray">当月</th></tr>
+          <tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
+          <tr>
+            <td><input type="time" id="${name}_当月開始時間"></td>
+            <td><input type="time" id="${name}_当月終了時間"></td>
+            <td><span id="${name}_当月稼働時間">0</span> 時間</td>
+          </tr>
+        </table>
+
+        <table>
+          <tr><td class="gray">前月配布</td><td><input type="number" id="${name}_前月配布"></td></tr>
+          <tr><td class="gray">当月配布1</td><td><input type="number" id="${name}_当月配布1"></td></tr>
+          <tr><td class="gray">当月配布2</td><td><input type="number" id="${name}_当月配布2"></td></tr>
+        </table>
+
+        <table>
+          <tr><th class="gray">持出1</th><th class="gray">持出2</th><th class="gray">持出3</th></tr>
+          <tr>
+            <td><input type="number" id="${name}_持出1"></td>
+            <td><input type="number" id="${name}_持出2"></td>
+            <td><input type="number" id="${name}_持出3"></td>
+          </tr>
+
+          <tr><th class="gray">実残1</th><th class="gray">実残2</th><th class="gray">実残3</th></tr>
+          <tr>
+            <td><input type="number" id="${name}_実残1"></td>
+            <td><input type="number" id="${name}_実残2"></td>
+            <td><input type="number" id="${name}_実残3"></td>
+          </tr>
+        </table>
+
+        <table>
+          <tr><td class="gray">判定</td><td class="judge" id="${name}_判定">-</td></tr>
+        </table>
+      </div>
+    `;
+    container.insertAdjacentHTML("beforeend", html);
+  });
+}
+
+createPersonForms();
+
+// ------------------------------
+// JSON 読み込み
+// ------------------------------
+document.getElementById("loadBtn").addEventListener("click", async () => {
+  const gou = document.getElementById("gouInput").value.trim();
+  if (!gou) return alert("号数を入力してください");
+
+  const url = `${gou}.json`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("ファイルなし");
+
+    const data = await res.json();
+
+    members.forEach(name => {
+      const d = data.担当データ[name];
+      if (!d) return;
+
+      for (const key in d) {
+        const id = `${name}_${key}`;
+        if (document.getElementById(id)) {
+          document.getElementById(id).value = d[key];
+        }
+      }
+    });
+
+    alert("5名分のデータを読み込みました");
+
+  } catch (e) {
+    alert("該当号数のファイルがありません");
+  }
+});
+
+// ------------------------------
+// JSON 保存（5名まとめて）
+// ------------------------------
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const gou = document.getElementById("gouInput").value;
+
+  const result = {
+    号数: gou,
+    担当データ: {}
+  };
+
+  members.forEach(name => {
+    const d = {};
+    const fields = [
+      "号数","地区","月日","場所","担当",
+      "前月開始時間","前月終了時間","前月稼働時間",
+      "当月開始時間","当月終了時間","当月稼働時間",
+      "前月配布","当月配布1","当月配布2",
+      "持出1","持出2","持出3",
+      "実残1","実残2","実残3",
+      "判定"
+    ];
+
+    fields.forEach(f => {
+      const id = `${name}_${f}`;
+      const el = document.getElementById(id);
+      d[f] = el ? el.value || el.textContent : "";
+    });
+
+    result.担当データ[name] = d;
+  });
+
+  const blob = new Blob([JSON.stringify(result, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${gou}.json`;
+  a.click();
+});
+</script>
+
+</body>
+</html>
