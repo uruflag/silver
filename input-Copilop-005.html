@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>配布管理（5名同時表示版）by copilot</title>
+<title>配布管理（共通項目＋5名同時表示）</title>
 
 <style>
 body {
@@ -71,12 +71,20 @@ button:active { background: #000; }
 <body>
 <div class="wrap">
 
-<h2>配布管理（5名同時表示・編集版）</h2>
+<h2>配布管理（共通項目＋5名同時表示）</h2>
 
-<!-- 号数入力 -->
+<!-- 共通項目 -->
+<table>
+<tr><td class="gray">号数</td><td><input id="gou"></td></tr>
+<tr><td class="gray">地区</td><td><input id="area"></td></tr>
+<tr><td class="gray">月日</td><td><input type="date" id="date"></td></tr>
+<tr><td class="gray">場所</td><td><input id="place"></td></tr>
+</table>
+
+<!-- JSON 読み込み -->
 <table>
 <tr>
-  <td class="gray">号数</td>
+  <td class="gray">号数（読込用）</td>
   <td><input type="text" id="gouInput"></td>
 </tr>
 <tr>
@@ -85,7 +93,7 @@ button:active { background: #000; }
 </tr>
 </table>
 
-<!-- 5名分のフォームを入れる -->
+<!-- 5名分のフォーム -->
 <div id="allPersons"></div>
 
 <div style="text-align:center; margin-top:20px;">
@@ -99,7 +107,7 @@ button:active { background: #000; }
 const members = ["村上", "吉田", "深田", "西田", "畑岡"];
 
 // ------------------------------
-// 5名分のフォームを生成
+// 5名分のフォーム生成
 // ------------------------------
 function createPersonForms() {
   const container = document.getElementById("allPersons");
@@ -111,10 +119,6 @@ function createPersonForms() {
         <div class="person-title">${name}</div>
 
         <table>
-          <tr><td class="gray">号数</td><td><input id="${name}_号数"></td></tr>
-          <tr><td class="gray">地区</td><td><input id="${name}_地区"></td></tr>
-          <tr><td class="gray">月日</td><td><input type="date" id="${name}_月日"></td></tr>
-          <tr><td class="gray">場所</td><td><input id="${name}_場所"></td></tr>
           <tr><td class="gray">担当</td><td><input id="${name}_担当" value="${name}"></td></tr>
         </table>
 
@@ -186,6 +190,13 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
 
     const data = await res.json();
 
+    // 共通項目
+    document.getElementById("gou").value = data.号数;
+    document.getElementById("area").value = data.地区;
+    document.getElementById("date").value = data.月日;
+    document.getElementById("place").value = data.場所;
+
+    // 5名分
     members.forEach(name => {
       const d = data.担当データ[name];
       if (!d) return;
@@ -198,7 +209,7 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
       }
     });
 
-    alert("5名分のデータを読み込みました");
+    alert("データを読み込みました");
 
   } catch (e) {
     alert("該当号数のファイルがありません");
@@ -209,17 +220,18 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
 // JSON 保存（5名まとめて）
 // ------------------------------
 document.getElementById("saveBtn").addEventListener("click", () => {
-  const gou = document.getElementById("gouInput").value;
-
   const result = {
-    号数: gou,
+    号数: gou.value,
+    地区: area.value,
+    月日: date.value,
+    場所: place.value,
     担当データ: {}
   };
 
   members.forEach(name => {
     const d = {};
     const fields = [
-      "号数","地区","月日","場所","担当",
+      "担当",
       "前月開始時間","前月終了時間","前月稼働時間",
       "当月開始時間","当月終了時間","当月稼働時間",
       "前月配布","当月配布1","当月配布2",
@@ -240,7 +252,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(result, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${gou}.json`;
+  a.download = `${result.号数}.json`;
   a.click();
 });
 </script>
