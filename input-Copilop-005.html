@@ -81,6 +81,27 @@ button:active { background: #000; }
 <tr><td class="gray">場所</td><td><input id="place"></td></tr>
 </table>
 
+<!-- 共通：時間項目 -->
+<table>
+<tr><th colspan="3" class="gray">前月（表示のみ）</th></tr>
+<tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
+<tr>
+  <td><input id="pmStart" readonly></td>
+  <td><input id="pmEnd" readonly></td>
+  <td><input id="pmWork" readonly></td>
+</tr>
+</table>
+
+<table>
+<tr><th colspan="3" class="gray">当月（入力可）</th></tr>
+<tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
+<tr>
+  <td><input type="time" id="cmStart"></td>
+  <td><input type="time" id="cmEnd"></td>
+  <td><input id="cmWork" readonly></td>
+</tr>
+</table>
+
 <!-- JSON 読み込み -->
 <table>
 <tr>
@@ -120,26 +141,6 @@ function createPersonForms() {
 
         <table>
           <tr><td class="gray">担当</td><td><input id="${name}_担当" value="${name}"></td></tr>
-        </table>
-
-        <table>
-          <tr><th colspan="3" class="gray">前月</th></tr>
-          <tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
-          <tr>
-            <td><input type="time" id="${name}_前月開始時間"></td>
-            <td><input type="time" id="${name}_前月終了時間"></td>
-            <td><span id="${name}_前月稼働時間">0</span> 時間</td>
-          </tr>
-        </table>
-
-        <table>
-          <tr><th colspan="3" class="gray">当月</th></tr>
-          <tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
-          <tr>
-            <td><input type="time" id="${name}_当月開始時間"></td>
-            <td><input type="time" id="${name}_当月終了時間"></td>
-            <td><span id="${name}_当月稼働時間">0</span> 時間</td>
-          </tr>
         </table>
 
         <table>
@@ -196,17 +197,34 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
     document.getElementById("date").value = data.月日;
     document.getElementById("place").value = data.場所;
 
+    // 共通：時間項目
+    pmStart.value = data.前月開始時間;
+    pmEnd.value = data.前月終了時間;
+    pmWork.value = data.前月稼働時間;
+
+    cmStart.value = data.当月開始時間;
+    cmEnd.value = data.当月終了時間;
+    cmWork.value = data.当月稼働時間;
+
     // 5名分
     members.forEach(name => {
       const d = data.担当データ[name];
       if (!d) return;
 
-      for (const key in d) {
-        const id = `${name}_${key}`;
+      const fields = [
+        "担当",
+        "前月配布","当月配布1","当月配布2",
+        "持出1","持出2","持出3",
+        "実残1","実残2","実残3",
+        "判定"
+      ];
+
+      fields.forEach(f => {
+        const id = `${name}_${f}`;
         if (document.getElementById(id)) {
-          document.getElementById(id).value = d[key];
+          document.getElementById(id).value = d[f];
         }
-      }
+      });
     });
 
     alert("データを読み込みました");
@@ -225,6 +243,15 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     地区: area.value,
     月日: date.value,
     場所: place.value,
+
+    前月開始時間: pmStart.value,
+    前月終了時間: pmEnd.value,
+    前月稼働時間: pmWork.value,
+
+    当月開始時間: cmStart.value,
+    当月終了時間: cmEnd.value,
+    当月稼働時間: cmWork.value,
+
     担当データ: {}
   };
 
@@ -232,8 +259,6 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     const d = {};
     const fields = [
       "担当",
-      "前月開始時間","前月終了時間","前月稼働時間",
-      "当月開始時間","当月終了時間","当月稼働時間",
       "前月配布","当月配布1","当月配布2",
       "持出1","持出2","持出3",
       "実残1","実残2","実残3",
