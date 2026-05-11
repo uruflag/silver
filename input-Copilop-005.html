@@ -75,43 +75,39 @@ button:active { background: #000; }
 
 <!-- 共通項目 -->
 <table>
-<tr><td class="gray">号数</td><td><input id="gou"></td></tr>
-<tr><td class="gray">地区</td><td><input id="area"></td></tr>
-<tr><td class="gray">月日</td><td><input type="date" id="date"></td></tr>
-<tr><td class="gray">場所</td><td><input id="place"></td></tr>
+  <tr><td class="gray">号数</td><td><input id="gou"></td></tr>
+  <tr><td class="gray">地区</td><td><input id="area"></td></tr>
+  <tr><td class="gray">月日</td><td><input type="date" id="date"></td></tr>
+  <tr><td class="gray">場所</td><td><input id="place"></td></tr>
 </table>
 
 <!-- 共通：時間項目 -->
 <table>
-<tr><th colspan="3" class="gray">前月（表示のみ）</th></tr>
-<tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
-<tr>
-  <td><input id="pmStart" readonly></td>
-  <td><input id="pmEnd" readonly></td>
-  <td><input id="pmWork" readonly></td>
-</tr>
+  <tr><th colspan="3" class="gray">前月（表示のみ）</th></tr>
+  <tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
+  <tr>
+    <td><input id="pmStart" readonly></td>
+    <td><input id="pmEnd" readonly></td>
+    <td><input id="pmWork" readonly></td>
+  </tr>
 </table>
 
 <table>
-<tr><th colspan="3" class="gray">当月（入力可）</th></tr>
-<tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
-<tr>
-  <td><input type="time" id="cmStart"></td>
-  <td><input type="time" id="cmEnd"></td>
-  <td><input id="cmWork" readonly></td>
-</tr>
+  <tr><th colspan="3" class="gray">当月（開始・終了入力可）</th></tr>
+  <tr><td class="gray">開始</td><td class="gray">終了</td><td class="gray">稼働</td></tr>
+  <tr>
+    <td><input type="time" id="cmStart"></td>
+    <td><input type="time" id="cmEnd"></td>
+    <td><input id="cmWork" readonly></td>
+  </tr>
 </table>
 
-<!-- JSON 読み込み -->
+<!-- 読込ボタン（上の号数を使う） -->
 <table>
-<tr>
-  <td class="gray">号数（読込用）</td>
-  <td><input type="text" id="gouInput"></td>
-</tr>
-<tr>
-  <td class="gray">データ読込</td>
-  <td><button id="loadBtn">読込</button></td>
-</tr>
+  <tr>
+    <td class="gray">データ読込</td>
+    <td><button id="loadBtn">読込</button></td>
+  </tr>
 </table>
 
 <!-- 5名分のフォーム -->
@@ -127,9 +123,7 @@ button:active { background: #000; }
 // 5名の固定メンバー
 const members = ["村上", "吉田", "深田", "西田", "畑岡"];
 
-// ------------------------------
 // 5名分のフォーム生成
-// ------------------------------
 function createPersonForms() {
   const container = document.getElementById("allPersons");
   container.innerHTML = "";
@@ -176,14 +170,12 @@ function createPersonForms() {
 
 createPersonForms();
 
-// ------------------------------
-// JSON 読み込み
-// ------------------------------
+// JSON 読み込み（上の号数を使う）
 document.getElementById("loadBtn").addEventListener("click", async () => {
-  const gou = document.getElementById("gouInput").value.trim();
-  if (!gou) return alert("号数を入力してください");
+  const gouVal = document.getElementById("gou").value.trim();
+  if (!gouVal) return alert("号数を入力してください");
 
-  const url = `${gou}.json`;
+  const url = `${gouVal}.json`;
 
   try {
     const res = await fetch(url);
@@ -192,23 +184,23 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
     const data = await res.json();
 
     // 共通項目
-    document.getElementById("gou").value = data.号数;
-    document.getElementById("area").value = data.地区;
-    document.getElementById("date").value = data.月日;
-    document.getElementById("place").value = data.場所;
+    document.getElementById("gou").value   = data.号数 || "";
+    document.getElementById("area").value  = data.地区 || "";
+    document.getElementById("date").value  = data.月日 || "";
+    document.getElementById("place").value = data.場所 || "";
 
     // 共通：時間項目
-    pmStart.value = data.前月開始時間;
-    pmEnd.value = data.前月終了時間;
-    pmWork.value = data.前月稼働時間;
+    pmStart.value = data.前月開始時間 || "";
+    pmEnd.value   = data.前月終了時間 || "";
+    pmWork.value  = data.前月稼働時間 || "";
 
-    cmStart.value = data.当月開始時間;
-    cmEnd.value = data.当月終了時間;
-    cmWork.value = data.当月稼働時間;
+    cmStart.value = data.当月開始時間 || "";
+    cmEnd.value   = data.当月終了時間 || "";
+    cmWork.value  = data.当月稼働時間 || "";
 
     // 5名分
     members.forEach(name => {
-      const d = data.担当データ[name];
+      const d = data.担当データ && data.担当データ[name];
       if (!d) return;
 
       const fields = [
@@ -221,9 +213,8 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
 
       fields.forEach(f => {
         const id = `${name}_${f}`;
-        if (document.getElementById(id)) {
-          document.getElementById(id).value = d[f];
-        }
+        const el = document.getElementById(id);
+        if (el) el.value = d[f] ?? "";
       });
     });
 
@@ -234,9 +225,7 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
   }
 });
 
-// ------------------------------
 // JSON 保存（5名まとめて）
-// ------------------------------
 document.getElementById("saveBtn").addEventListener("click", () => {
   const result = {
     号数: gou.value,
@@ -268,7 +257,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     fields.forEach(f => {
       const id = `${name}_${f}`;
       const el = document.getElementById(id);
-      d[f] = el ? el.value || el.textContent : "";
+      d[f] = el ? (el.value || el.textContent || "") : "";
     });
 
     result.担当データ[name] = d;
@@ -277,7 +266,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(result, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${result.号数}.json`;
+  a.download = `${result.号数 || "no_gou"}.json`;
   a.click();
 });
 </script>
