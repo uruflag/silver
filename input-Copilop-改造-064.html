@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<!-----------------------------------------------
+| 1.最初の画面で共通項目のみ表示
+| 2.場所が変更されたときに個別項目を表示する　2026.05.12
+|<2026.5.12>
+| 1.場所が変更されたときファイルを読んで　　　020.html
+| 2.指定した場所と一致するレコードを選択      030.html
+|<2026.5.13>
+| 1.<option value="">に記述しなかったので、ファイルチェックができなかった 040.html
+|<2026.5.13>
+| 1.読み込みレコードの分解
+| 2.共通項目の表示
+| 3.個別項目を表示
+| 0.計算エラー
+| 0.保存をする前に場所を変えるエラー
+-------------------------------------------------->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>配布入力画面（064）</title>
+  <style>
+    :root {
+      --border: #111;
+      --pink: #efb6ea;
+      --gray: #d9d9d9;
+      --gray-o: #f3f3f3;
+      --red: #ff2b2b;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 10px;
+      background: #f0f0f0;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      color: #111;
+    }
+
+    .wrap { margin: 0 auto; max-width: 600px; background: var(--white); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+    h2 { font-size: 18px; text-align: center; margin-top: 0; }
+
+    /* 基本テーブル設定 */
+    .sheet {
+      width: 100%;
+      border-collapse: collapse;
+      border: 2px solid var(--border);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .sheet td, .sheet th {
+      border: 1px solid var(--border);
+      padding: 8px 4px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    /* ヘッダー部分 */
+    .header-table td { padding: 10px; }
+    .pink { background: var(--pink); }
+    .gray { background: var(--gray); font-weight: bold; }
+    .gray-o { background: var(--gray-o); }
+    .red { color: var(--red); }
+    .bold { font-weight: 700; }
+
+    /* 入力要素 */
+    input, select {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px 2px;
+      text-align: center;
+      font-size: 16px; /* スマホでズームされないためのサイズ */
+      background: var(--white);
+    }
+    input[type="date"] { padding: 5px; }
+    input:focus { border-color: #007bff; outline: none; background: #fffde7; }
+
+    /* メンバーごとのブロック（スマホでの見やすさを重視） */
+    .person-group {
+      border: 2px solid var(--border);
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    /* 総合計エリア */
+    .total-section {
+      width: 100%;
+      background: var(--gray);
+      border: 2px solid var(--border);
+      margin-top: 20px;
+    }
+    .total-section td { padding: 10px 5px; }
+
+    /* ボタン */
+    .btn-area {
+      position: sticky;
+      bottom: 10px;
+      text-align: center;
+      margin: 20px 0;
+      z-index: 100;
+    }
+    .calc-btn {
+      padding: 15px 50px;
+      font-size: 18px;
+      font-weight: 700;
+      background: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 50px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      width: 90%;
+    }
+    .calc-btn:active { background: #000; transform: translateY(2px); }
+
+    /* スマホ用テーブルレイアウト調整 */
+    @media screen and (max-width: 480px) {
+      .sheet { font-size: 13px; }
+      .sheet input { font-size: 15px; padding: 6px 2px; }
+      .dist-in { background: #fff0f0; border: 1px solid var(--red); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- 基本情報 -->
+  <table class="sheet header-table">
+    <tr>
+      <td class="gray" style="width: 25%;">月号</td>
+      <td class="pink" colspan="4"><input class="bold"  id="gouInput" type="number" inputmode="numeric" value="" /></td>
+    </tr>
+    <tr>
+      <td class="gray" style="width: 25%;">月日</td>
+      <td class="pink" colspan="4"><input class="bold" id="dtInput" type="date" value="2026/01/01" /></td>
+    </tr>
+    <tr>
+      <td class="gray" style="width: 25%;">場所</td>
+      <td class="pink" colspan="4">
+        <div style="display: flex; gap: 5px;">
+	  
+          <select class="bold" id="placeSelect"> <!--2026.5.12-->
+            <option value="" selected disabled>場所を選んでください</option>
+
+            <option value="日限山">日限山</option>
+            <option value="さつき台自治会">さつき台自治会</option>
+            <option value="川上町ＡＢ">川上町ＡＢ</option>
+            <option value="川上町ＣⅮ">川上町ＣⅮ</option>
+            <option value="舞岡台自治会">舞岡台自治会</option>
+          </select>
+        </div>
+      </td>
+    </tr>
+<!-- 稼働時間 -->
+    <TR>
+      <td class="gray" rowspan="2" style="width: 25%;">時間</td>
+      <td class="gray" id="job-zs" style="width: 15%;">00:00</td>
+      <td class="gray" style="width: 10%;"></td>
+      <td  class="pink" style="width: 30%;"><input type="time" id="job-s" value="11:11"></td>
+      <td  class="pink" style="width: 20%;"><input id="job-h"></td>  
+    </TR>
+    <TR>
+      <td class="gray" id="job-ze">00:00</td>
+      <td class="gray" id="job-zk">0.0</td>
+      <td  class="pink"><input type="time" id="job-e" value="12:12"></td>
+      <td  class="pink"><input id="job-k" value="0.0"></td>  
+    </TR>
+  </table>
+
+  <!-- メンバー入力エリア -->
+
+  <div id="memberContainers" style="display:none;"></div>
+
+  <!-- 総合計エリア -->
+  <table class="sheet total-section">
+    <tr class="bold red">
+      <td class="gray" style="width: 25%;">総合計</td>
+      <td>持出:<span id="grandCarryTotal">0</span></td>
+      <td>配布:<span id="grandDistTotal">0</span></td>
+      <td>実残:<span id="grandRemTotal">0</span></td>
+    </tr>
+    <tr class="bold">
+      <td class="gray">最終判定</td>
+      <td colspan="3" id="finalJudgeStatus" style="font-size: 18px; background: #fff;">-</td>
+    </tr>
+  </table>
+
+  <div class="btn-area">
+    <button type="button" class="calc-btn" id="execCalc">計 算 実 行</button>
+  </div>
+</div>
+
+<!-------------------------------------------------------------------------->
+<script>
+
+<!-------------------------------------------------------------------------->
+
+//wrightMember(no, cols);
+  const members = ["村上", "吉田", "深田", "西田", "畑岡"];
+  const container = document.getElementById('memberContainers');
+
+
+  // メンバーごとの入力テーブルを生成
+  members.forEach((name) => {
+    const html = `
+      <table class="sheet person-group-table" data-name="${name}">
+        <thead>
+          <tr>
+            <th colspan="4" class="pink">${name}</th>
+          </tr>
+          <tr class="gray-o" style="font-size: 11px;">
+            <th style="width: 25%;">持出</th>
+            <th style="width: 25%;">配布入力</th>
+            <th style="width: 25%;">実残</th>
+            <th style="width: 25%;">判定/計算</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="number" inputmode="numeric" class="carry-in" value="0"></td>
+            <td rowspan="2"><input type="number" inputmode="numeric" class="dist-in" value="0" style="height: 60px;"></td>
+            <td><input type="number" inputmode="numeric" class="rem-in" value="0"></td>
+            <td rowspan="3" class="person-judge bold" style="font-size: 20px;">-</td>
+          </tr>
+          <tr>
+            <td><input type="number" inputmode="numeric" class="carry-in" value="0"></td>
+            <td><input type="number" inputmode="numeric" class="rem-in" value="0"></td>
+          </tr>
+          <tr>
+            <td><input type="number" inputmode="numeric" class="carry-in" value="0"></td>
+	    <td><input type="number" inputmode="numeric" class="dist-in-2" value="0" </td>
+            <td><input type="number" inputmode="numeric" class="rem-in" value="0"></td>
+          </tr>
+          <tr class="gray-o" style="font-size: 12px;">
+            <td>計:<span class="person-carry-total">0</span></td>
+            <td>計:<span class="person-rem-total">0</span></td>
+            <td colspan="2" style="text-align: right; padding-right: 10px;">差引(配布数): <span class="person-calculated-val">0</span></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+  });
+
+
+<!---------------------------------------------------------------------------------->
+  document.addEventListener('DOMContentLoaded', () => {
+    // 数値上書き設定（フォーカス時に全選択）
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+      input.addEventListener('focus', (e) => e.target.select());
+    });
+
+    const btn = document.getElementById('execCalc');
+
+    btn.addEventListener('click', () => {
+      let gCarry = 0;
+      let gDist = 0;
+      let gRem = 0;
+
+      const groups = document.querySelectorAll('.person-group-table');
+      groups.forEach(group => {
+        let pCarry = 0;
+        let pRem = 0;
+
+        // 小計計算
+        group.querySelectorAll('.carry-in').forEach(i => pCarry += parseInt(i.value, 10) || 0);
+        group.querySelectorAll('.rem-in').forEach(i => pRem += parseInt(i.value, 10) || 0);
+        
+        const pDist = parseInt(group.querySelector('.dist-in').value, 10) || 0;
+        const pCalculated = pCarry - pRem;
+
+        // 表示更新
+        group.querySelector('.person-carry-total').textContent = pCarry;
+        group.querySelector('.person-rem-total').textContent = pRem;
+        group.querySelector('.person-calculated-val').textContent = pCalculated;
+        
+        const judgeCell = group.querySelector('.person-judge');
+        if (pCalculated === pDist && pDist !== 0) {
+          judgeCell.textContent = "◎";
+          judgeCell.style.color = "blue";
+        } else if (pCalculated === pDist) {
+          judgeCell.textContent = "◎";
+          judgeCell.style.color = "#111";
+        } else {
+          judgeCell.textContent = pCalculated;
+          judgeCell.style.color = "red";
+        }
+
+        gCarry += pCarry;
+        gRem += pRem;
+        gDist += pDist;
+      });
+
+      // 総合計表示
+      document.getElementById('grandCarryTotal').textContent = gCarry;
+      document.getElementById('grandRemTotal').textContent = gRem;
+      document.getElementById('grandDistTotal').textContent = gDist;
+
+      const finalJudgeStatus = document.getElementById('finalJudgeStatus');
+      const totalCalculated = gCarry - gRem;
+
+      if (totalCalculated === gDist) {
+        finalJudgeStatus.innerHTML = "<span style='color:blue;'>◎ 一致しました</span>";
+      } else {
+        finalJudgeStatus.innerHTML = "<span style='color:red;'>× 不一致 (計算上は" + totalCalculated + ")</span>";
+      }
+      
+      // 画面上部へスクロール（結果を見やすくするため）
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+  });
+<!-------------------------------------------------------------------------->
+<!----場所の変更があったとき---------
+document.getElementById("placeSelect").addEventListener("change", async () => {
+
+//　選択した場所の値を代入
+  const place = document.getElementById("placeSelect").value;
+
+ // tyr エラー（例外処理）----------------------------------
+  try {
+    const res = await fetch("haifu-now.tbl");　//ファイルの読み込み
+
+    if (!res.ok) {
+      alert("haifu-now.tbl の読み込みに失敗しました");
+      return;
+    }
+//---------追加変更2026.5.12---------------------------------
+    const text = await res.text();  // ← 内容を読み込む（必要なら解析もできる）
+
+//行ごとに分割
+    const lines= text.split(/\r?\n/);
+
+//選択した場所を含む行だけ抽出
+    const matched = lines.filter(line => line.includes(place));
+
+    if(matched.length=== 0){
+	alert("該当する場所のデータがありません");
+	return;
+    }
+
+alert("haifu-now.tbl を読み込みました(" + matched.length + "件)");
+// ★ 最初のレコードから共通項目をセット
+	const first = matched[0];
+	//const cols = first.trim().split(/\s+/);
+	const cols = first.trim().split('\t');
+
+// 例：共通項目に反映
+	document.getElementById("gouInput").value =cols[0];       //月号
+	document.getElementById("dtInput").value = cols[1]; //月日
+
+	document.getElementById("job-zs").textContent = cols[3];  //前開始
+	document.getElementById("job-ze").textContent = cols[4];  //前終了
+	document.getElementById("job-zk").textContent = cols[5];  //前稼働
+	document.getElementById("job-s").value  = cols[6];  //開始
+	document.getElementById("job-e").value  = cols[7];  //終了
+	document.getElementById("job-h").value  = cols[8];  //補正
+	document.getElementById("job-k" ).value  = cols[9];  //稼働
+//alert(cols[8]);
+
+// ---★必要ならここで text を解析して個別項目に反映できる ★★★★★　matched
+//console.log("抽出されたレコード:",matched);
+matched.forEach((targetLine) => {
+	const cols = targetLine.split('\t');
+	alert(cols[14]);
+
+
+
+});
+
+// 非表示になっている個別項目を表示する
+    document.getElementById("memberContainers").style.display = "block";
+
+  } catch (e) {
+    alert("ファイル読み込みエラー: " + e);
+  }
+
+});
+<!-------------------------------------------------------------------------->
+//　個別に担当者ごとを出力
+function wrightMember(no, cols) {
+  const members = ["村上", "吉田", "深田", "西田", "畑岡"];
+  const container = document.getElementById('memberContainers');
+
+
+  // メンバーごとの入力テーブルを生成
+  members.forEach((name) => {
+    const html = `
+      <table class="sheet person-group-table" data-name="${name}">
+        <thead>
+          <tr>
+            <th colspan="4" class="pink">${name}</th>
+          </tr>
+          <tr class="gray-o" style="font-size: 11px;">
+            <th style="width: 25%;">持出</th>
+            <th style="width: 25%;">配布入力</th>
+            <th style="width: 25%;">実残</th>
+            <th style="width: 25%;">判定/計算</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="number" inputmode="numeric" class="carry-in" value="0"></td>
+            <td rowspan="2"><input type="number" inputmode="numeric" class="dist-in" value="0" style="height: 60px;"></td>
+            <td><input type="number" inputmode="numeric" class="rem-in" value="0"></td>
+            <td rowspan="3" class="person-judge bold" style="font-size: 20px;">-</td>
+          </tr>
+          <tr>
+            <td><input type="number" inputmode="numeric" class="carry-in" value="0"></td>
+            <td><input type="number" inputmode="numeric" class="rem-in" value="0"></td>
+          </tr>
+          <tr>
+            <td><input type="number" inputmode="numeric" class="carry-in" value="0"></td>
+	    <td><input type="number" inputmode="numeric" class="dist-in-2" value="0" </td>
+            <td><input type="number" inputmode="numeric" class="rem-in" value="0"></td>
+          </tr>
+          <tr class="gray-o" style="font-size: 12px;">
+            <td>計:<span class="person-carry-total">0</span></td>
+            <td>計:<span class="person-rem-total">0</span></td>
+            <td colspan="2" style="text-align: right; padding-right: 10px;">差引(配布数): <span class="person-calculated-val">0</span></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+  });
+}
+<!-------------------------------------------------------------------------->
+
+</script>
+
+</body>
+</html>
